@@ -1,0 +1,177 @@
+<div class="container-fluid">
+  <div class="button-container"></div>
+  <div class="container-fluid">
+      <mat-tab-group dynamicHeight animationDuration="800ms" (selectedIndexChange)="onTabChange($event)">
+          <mat-tab label="Saved exams">
+              <div class="row cards-container">
+              <div *ngFor="let exam of exams" class="col col-auto">
+                  <div class="card border-dark mb-3"  (click)="openExamModal(examModal,exam.exam_id)">
+                      <div class="card-header"><h5 class="card-title">{{exam.title}}</h5></div>
+                      <div class="card-body">
+                          <p class="card-text">{{exam.description}}<p>
+                          <button *ngIf="!exam.is_active" class="btn btn-outline-success activate-btn" (click)="activateExam($event,runExamModal,exam.exam_id)">Activate Exam</button>
+                          <button *ngIf="exam.is_active" class="btn btn-outline-success active-btn" disabled>Active</button>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </mat-tab>
+      <mat-tab label="Active exams">
+          <div class="row cards-container">
+          <div *ngFor="let activeExam of activeExams" class="col col-auto">
+              <div class="card border-dark mb-3" (click)="openActiveExamModal(activeExamModal,activeExam)">
+                  <div class="card-header"><h5 class="card-title">{{activeExam.exam.title}}</h5></div>
+                  <div class="card-body">
+                      <p class="card-text">{{activeExam.exam.description}}<p>
+                      <div class="row">
+                        <div class="col col-6">
+                          <p *ngIf="activeExam.duration!='0'" class="mr-auto time-left">Time left: {{activeExam.duration}}</p>
+                        </div>
+                        <div class="col col-6 token-col">
+                          <button class="btn btn-warning token-btn" (click)="copyToClipboard($event)" [cdkCopyToClipboard]='activeExam.token'>{{activeExam.token}}  <i class="bi bi-files copy-icon"></i></button>
+                        </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </mat-tab>
+          <mat-tab label="Past exams">
+          </mat-tab>
+        </mat-tab-group>
+  </div>
+</div>
+
+<ng-template #runExamModal let-modal>
+  <div class="container run-exam-container">
+    <div class="container-fluid">
+      <mat-slide-toggle color="primary" [checked]="isDeadlineSet" (change)="onDeadlineToggleChange()">
+        <h5>Exam deadline</h5>
+      </mat-slide-toggle>
+      <!--<mat-form-field>
+        <input matInput [ngxMatDatetimePicker]="endPicker" placeholder="Choose a date" [formControl]="endDateControl"
+          [min]="minDate" [max]="maxDate">
+        <ngx-mat-datepicker-toggle matSuffix [for]="endPicker"></ngx-mat-datepicker-toggle>
+        <ngx-mat-datetime-picker #endPicker [showSpinners]="showSpinners"
+          [stepHour]="stepHour" [stepMinute]="stepMinute" [stepSecond]="stepSecond"
+          [color]="color">
+        </ngx-mat-datetime-picker>
+      </mat-form-field>-->
+      <ngx-mat-timepicker
+        [(ngModel)]="date"
+        [showSpinners]="false"
+        [stepHour]="1"
+        [stepMinute]="1"
+        [stepSecond]="1"
+        [color]="color"
+        [disabled]="!isDeadlineSet"
+        (ngModelChange)="onTimeChange()">
+      </ngx-mat-timepicker>
+      <div *ngIf="!isValidDate && isDeadlineSet" class="error-message">
+        Selected deadline cannot be before the current time.
+      </div>
+    </div>
+    <!--Two buttons in the same line-->
+    <div class="btn-container">
+      <button class="btn btn-outline-danger cancel-btn" (click)="modal.dismiss('Cross click')">Cancel</button>
+      <button class="btn btn-outline-success" (click)="runExam(selected_exam!.exam_id)" [disabled]="!isValidDate && isDeadlineSet">Run Exam</button>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #examModal let-modal>
+  <div (click)="modal.dismiss('Cross click')" class="exit"><i class="bi bi-x"></i></div>
+  <div class="exam-modal-container container">
+      <div class="form-group">
+          <label for="examTitle"><h5 class="exam-title">Exam Title</h5></label>
+          <div class="input-group">
+            <input type="text" readonly class="form-control custom-input" id="examTitle" [(ngModel)]="selected_exam!.title" placeholder="Enter Exam Title">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="examDescription"><h5 class="exam-title">Description</h5></label>
+          <div class="input-group">
+            <textarea class="form-control custom-input" readonly id="examDescription" [(ngModel)]="selected_exam!.description" placeholder="Enter Exam Description"></textarea>
+          </div>
+        </div>
+        <mat-accordion>
+          <mat-expansion-panel expanded hideToggle>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+              <p class="questions-list">Questions</p>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+            <ul *ngIf="selected_exam" class="list-group">
+              <li *ngFor="let question of selected_exam.questions" class="list-group-item" (click)="showAnswers(question)">
+                <span [ngClass]="selected_questions.indexOf(question) !== -1 ? 'question-text-clicked' : 'question-text'">{{ question.text }} (<b>{{question.score}} points</b>)</span>
+                <span class="tag">{{ question.topic }}</span>
+                <div *ngIf="selected_questions.includes(question)" class="answer-list">
+                  <ul class="answers-list">
+                    <li *ngFor="let answer of question.answers;let i = index" class="answer-item">
+                      {{i+1}}. {{ answer.text }}
+                      <span [ngClass]="{'text-success': answer.correct, 'text-danger': !answer.correct}">
+                        <i *ngIf="answer.correct" class="bi bi-check"></i>
+                        <i *ngIf="!answer.correct" class="bi bi-x"></i>
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+            </ul>
+          </mat-expansion-panel>
+        </mat-accordion>
+    </div>
+</ng-template>
+
+<ng-template #activeExamModal let-modal>
+  <div class="container active-exam-container">
+    <div class="row">
+      <div (click)="modal.dismiss('Cross click')" class="exit active-exit"><i class="bi bi-x"></i></div>
+    </div>
+    <h4 class="active-exam-title">{{selectedActiveExam!.exam.title}}</h4>
+    <div class="row exam-key-row">
+      <div class="col col-6 exam-key-col">
+        <p class="exam-key-text">Exam key:  </p>
+        <span>
+          <span class="token-active">{{selectedActiveExam!.token}}</span>
+          <button class="btn btn-warning token-btn-i" (click)="copyToClipboard($event)" [cdkCopyToClipboard]='selectedActiveExam!.token'><i class="bi bi-files copy-icon"></i>
+        </button>
+      </span>
+      </div>
+      <div class="col col-6 stop-col">
+        <button class="btn btn-outline-danger stop-exam-btn" (click)="stopExam(selectedActiveExam!.active_exam_id)">Stop exam</button>
+      </div>
+    </div>
+    <div class="row stats-row">
+      <div class="col">
+        <h2>2</h2>
+        <small>Started the exam</small>
+      </div>
+      <div class="col">
+        <h2>0</h2>
+        <small>Submitted the exam</small>
+      </div>
+    </div>
+    <div class="container-fluid table-cont">
+      <h5>List of students</h5>
+      <table class="fixed-header">
+        <thead>
+          <tr class="custom-tr">
+            <th>ID</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Email</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let student of students">
+            <td>{{ student.id }}</td>
+            <td>{{ student.firstName }}</td>
+            <td>{{ student.lastName }}</td>
+            <td>{{ student.email }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</ng-template>

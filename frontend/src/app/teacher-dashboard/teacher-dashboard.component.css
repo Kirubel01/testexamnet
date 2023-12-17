@@ -1,0 +1,35 @@
+.spacer {
+  flex: 1;
+}
+
+.button-container {
+  display: flex;
+  align-items: center;
+  margin-top: 3px;
+}
+
+.center-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Increase the clickable area for the entire button */
+button {
+  padding: 30px 20px; /* Adjust the padding as needed */
+}
+
+.children {
+  margin-right: 20px;
+  margin-left: 20px;
+}
+
+mat-toolbar{
+  margin-bottom: 20px;
+}
+
+.menu-item {
+  height: fit-content;
+  padding: 0 5px 0 5px;
+}
